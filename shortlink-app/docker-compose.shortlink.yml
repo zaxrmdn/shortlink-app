@@ -10,7 +10,7 @@ services:
     container_name: shortlink-app
     restart: unless-stopped
     environment:
-      - ADMIN_PASS=GantiDenganPasswordKuatAnda
+      - ADMIN_PASS=${{ secrets.PASS_APP }}
     volumes:
       - ./data:/app/data
     networks:
