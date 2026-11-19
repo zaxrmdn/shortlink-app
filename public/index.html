@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Shortlink</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+      <div>
+        <h1 class="text-2xl font-bold text-indigo-400">🔗 Personal Shortlink</h1>
+        <p class="text-sm text-slate-400">Kelola tautan pendek & pantau statistik klik</p>
+      </div>
+      <button onclick="logout()" id="logoutBtn" class="hidden text-xs bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg text-slate-300">
+        Ganti Password
+      </button>
+    </div>
+
+    <!-- Login Box -->
+    <div id="loginSection" class="bg-slate-800 p-6 rounded-xl max-w-md mx-auto shadow-lg border border-slate-700">
+      <h2 class="text-lg font-semibold mb-3">Autentikasi Dashboard</h2>
+      <input type="password" id="adminPassInput" placeholder="Masukkan Password Admin..." 
+        class="w-full p-3 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-indigo-500 mb-4">
+      <button onclick="login()" class="w-full bg-indigo-600 hover:bg-indigo-500 font-medium py-2.5 rounded-lg transition">
+        Masuk
+      </button>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardSection" class="hidden space-y-6">
+      <!-- Form Buat Link -->
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+        <form id="createForm" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="md:col-span-6">
+            <label class="block text-xs text-slate-400 mb-1">URL Panjang (Tujuan)</label>
+            <input type="text" id="originalUrl" required placeholder="https://contoh.com/artikel-panjang-sekali"
+              class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div class="md:col-span-4">
+            <label class="block text-xs text-slate-400 mb-1">Custom Slug (Opsional)</label>
+            <div class="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-2.5">
+              <span class="text-slate-500 text-sm">/</span>
+              <input type="text" id="customSlug" placeholder="porto-2026"
+                class="w-full p-2.5 bg-transparent focus:outline-none">
+            </div>
+          </div>
+          <div class="md:col-span-2 flex items-end">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-medium py-2.5 rounded-lg transition">
+              Buat
+            </button>
+          </div>
+        </form>
+        <p id="errorMsg" class="text-red-400 text-sm mt-2 hidden"></p>
+      </div>
+
+      <!-- Tabel Daftar Link -->
+      <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-800/50 border-b border-slate-700 text-xs text-slate-400 uppercase">
+                <th class="p-4">Shortlink</th>
+                <th class="p-4">URL Tujuan</th>
+                <th class="p-4 text-center">Klik</th>
+                <th class="p-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="linksTableBody" class="divide-y divide-slate-700/50 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let adminPassword = localStorage.getItem('shortlink_pass') || '';
+
+    function checkInit() {
+      if (adminPassword) {
+        fetchLinks();
+      }
+    }
+
+    function login() {
+      const input = document.getElementById('adminPassInput').value;
+      if (!input) return;
+      adminPassword = input;
+      localStorage.setItem('shortlink_pass', input);
+      fetchLinks();
+    }
+
+    function logout() {
+      localStorage.removeItem('shortlink_pass');
+      adminPassword = '';
+      document.getElementById('loginSection').classList.remove('hidden');
+      document.getElementById('dashboardSection').classList.add('hidden');
+      document.getElementById('logoutBtn').classList.add('hidden');
+    }
+
+    async function fetchLinks() {
+      const res = await fetch('/api/links', {
+        headers: { 'x-admin-password': adminPassword }
+      });
+
+      if (res.status === 401) {
+        alert('Password salah!');
+        logout();
+        return;
+      }
+
+      const data = await res.json();
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+
+      const tbody = document.getElementById('linksTableBody');
+      tbody.innerHTML = '';
+
+      data.links.forEach(link => {
+        const shortUrl = `${window.location.origin}/${link.slug}`;
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-700/30">
+            <td class="p-4 font-medium text-indigo-400">
+              <a href="${shortUrl}" target="_blank" class="hover:underline">/${link.slug}</a>
+            </td>
+            <td class="p-4 text-slate-300 max-w-xs truncate" title="${link.original_url}">
+              ${link.original_url}
+            </td>
+            <td class="p-4 text-center">
+              <span class="bg-slate-700 px-2.5 py-1 rounded-full text-xs font-semibold">${link.clicks}</span>
+            </td>
+            <td class="p-4 text-right space-x-2">
+              <button onclick="copyLink('${shortUrl}')" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 px-2.5 py-1 rounded text-xs">
+                Salin
+              </button>
+              <button onclick="deleteLink(${link.id})" class="bg-red-600/20 text-red-400 hover:bg-red-600/30 px-2.5 py-1 rounded text-xs">
+                Hapus
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = document.getElementById('originalUrl').value;
+      const customSlug = document.getElementById('customSlug').value;
+      const errorEl = document.getElementById('errorMsg');
+      errorEl.classList.add('hidden');
+
+      const res = await fetch('/api/links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': adminPassword
+        },
+        body: JSON.stringify({ url, customSlug })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('originalUrl').value = '';
+      document.getElementById('customSlug').value = '';
+      fetchLinks();
+    });
+
+    function copyLink(text) {
+      navigator.clipboard.writeText(text);
+      alert('Tautan disalin: ' + text);
+    }
+
+    async function deleteLink(id) {
+      if (!confirm('Hapus shortlink ini?')) return;
+      await fetch(`/api/links/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': adminPassword }
+      });
+      fetchLinks();
+    }
+
+    checkInit();
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+version: '3.8'
+
+networks:
+  app-net:
+    external: true
+
+services:
+  shortlink-app:
+    build: .
+    container_name: shortlink-app
+    restart: unless-stopped
+    environment:
+      - ADMIN_PASS=GantiDenganPasswordKuatAnda
+    volumes:
+      - ./data:/app/data
+    networks:
+      - app-net
