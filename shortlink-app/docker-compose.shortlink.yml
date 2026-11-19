@@ -1,7 +1,8 @@
 version: '3.8'
 
 networks:
-  npm_app-net:
+  app-net:
+    name: npm_app-net
     external: true
 
 services:
@@ -10,8 +11,11 @@ services:
     container_name: shortlink-app
     restart: unless-stopped
     environment:
-      - ADMIN_PASS=${{ secrets.PASS_APP }}
+      - ADMIN_PASS=${ADMIN_PASS:-changeme}
     volumes:
-      - ./data:/app/data
+      - shortlink_data:/app/data
     networks:
-      - npm_app-net
+      - app-net
+
+volumes:
+  shortlink_data:

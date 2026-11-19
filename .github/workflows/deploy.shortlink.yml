@@ -22,14 +22,15 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan -H ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
 
-    - name: Deploy via SSH
+    - name: Deploy Shortlink App via SSH
       env:
         VPS_USER: ${{ secrets.VPS_USER }}
         VPS_IP: ${{ secrets.VPS_IP }}
+        ADMIN_PASS: ${{ secrets.PASS_APP }}
       run: |
         ssh $VPS_USER@$VPS_IP "mkdir -p /opt/vps-stack/shortlink-app"
         scp -r shortlink-app/* $VPS_USER@$VPS_IP:/opt/vps-stack/shortlink-app/
-        ssh $VPS_USER@$VPS_IP << 'EOF'
+        ssh $VPS_USER@$VPS_IP "ADMIN_PASS='${ADMIN_PASS}' bash -s" << 'EOF'
           export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
           cd /opt/vps-stack/shortlink-app
           docker compose -f docker-compose.shortlink.yml build
