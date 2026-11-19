@@ -3,7 +3,8 @@ name: Deploy Shortlink App to VPS
 on:
   push:
     branches: [ "main" ]
-
+    paths:
+      - 'shortlink-app/**'
 jobs:
   deploy:
     runs-on: ubuntu-latest

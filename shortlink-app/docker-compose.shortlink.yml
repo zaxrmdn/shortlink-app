@@ -1,7 +1,7 @@
 version: '3.8'
 
 networks:
-  app-net:
+  npm_app-net:
     external: true
 
 services:
@@ -14,4 +14,4 @@ services:
     volumes:
       - ./data:/app/data
     networks:
-      - app-net
+      - npm_app-net
